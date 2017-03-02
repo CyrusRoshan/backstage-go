@@ -36,9 +36,10 @@ func Create(info Info) *stageFloor {
 	return &stage
 }
 
-func (s *stageFloor) NewChart(name string) *Chart {
+func (s *stageFloor) NewChart(name string, info string) *Chart {
 	chart := Chart{
 		Name:       name,
+		Info:       info,
 		DataBuffer: ring.New(30),
 	}
 	s.Charts = append(s.Charts, &chart)

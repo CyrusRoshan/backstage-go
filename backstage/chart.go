@@ -1,13 +1,12 @@
 package backstage
 
-import (
-	"container/ring"
-	"fmt"
-)
+import "container/ring"
 
 type Chart struct {
 	Name       string
-	DataBuffer *ring.Ring
+	Info       string
+	ReadData   []interface{}
+	DataBuffer *ring.Ring `json:"-"`
 }
 
 func (c *Chart) Push(data interface{}) {
@@ -15,9 +14,9 @@ func (c *Chart) Push(data interface{}) {
 	c.DataBuffer = c.DataBuffer.Next()
 }
 
-func (c *Chart) readAndClear() []interface{} {
+func (c *Chart) readAndClear() *[]interface{} {
 	length := c.DataBuffer.Len()
-	dataArr := make([]interface{}, length)
+	c.ReadData = make([]interface{}, length)
 
 	for i := 0; i < length; i++ {
 		if c.DataBuffer.Value == nil {
@@ -28,16 +27,16 @@ func (c *Chart) readAndClear() []interface{} {
 	i := 0
 	for i < length {
 		data := c.DataBuffer.Value
-		fmt.Println(data)
 		if data == nil {
 			break
 		}
 
-		dataArr[i] = data
+		c.ReadData[i] = data
 		c.DataBuffer.Value = nil
 		i++
 		c.DataBuffer = c.DataBuffer.Next()
 	}
 
-	return dataArr[:i]
+	c.ReadData = c.ReadData[:i]
+	return &(c.ReadData)
 }

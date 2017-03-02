@@ -12,7 +12,7 @@ func main() {
 	info := backstage.Info{}
 	stage := backstage.Create(info)
 
-	randomInt := stage.NewChart("randomInt")
+	randomInt := stage.NewChart("randomInt", "")
 
 	for {
 		randInt := rand.Intn(100)
