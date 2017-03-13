@@ -14,7 +14,8 @@ func main() {
 	backstage.Start(
 		"Sample Application",
 		&backstage.Info{
-			Port: 9999,
+			Port:        9999,
+			RefreshRate: 1000,
 		},
 		[]*chart.Chart{
 			randomIntChart,

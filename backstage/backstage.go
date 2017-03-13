@@ -11,11 +11,12 @@ import (
 )
 
 type Info struct {
-	GlobalDefaults      string `json:"globalDefaults"`
-	ClientLogs          bool   `json:"clientLogs"`
-	ServerLogs          bool   `json:"serverLogs"`
+	GlobalDefaults      string
+	ClientLogs          bool
+	ServerLogs          bool
 	DisableTerminalLogs bool
 	Port                int `json:"-"`
+	RefreshRate         int
 }
 
 type stageFloor struct {
@@ -25,18 +26,7 @@ type stageFloor struct {
 }
 
 func Start(name string, info *Info, charts []*chart.Chart) {
-	if info.Port == 0 {
-		info.Port = 9999
-	}
-
-	l, err := net.Listen("tcp", fmt.Sprintf(":%d", info.Port))
-	if err != nil {
-		l, err := net.Listen("tcp", ":0")
-		utils.PanicIf(err)
-
-		info.Port = l.Addr().(*net.TCPAddr).Port
-	}
-	l.Close()
+	setDefaults(info)
 
 	stage := stageFloor{
 		Name:   name,
@@ -45,9 +35,9 @@ func Start(name string, info *Info, charts []*chart.Chart) {
 	}
 
 	backstage := http.NewServeMux()
-	backstage.HandleFunc("/ping", ping(&stage))
-	backstage.HandleFunc("/info", sendInfo(&stage))
-	backstage.HandleFunc("/data", sendData(&stage))
+	backstage.HandleFunc("/ping", headerModificationWrapper(ping()))
+	backstage.HandleFunc("/info", headerModificationWrapper(sendInfo(&stage)))
+	backstage.HandleFunc("/data", headerModificationWrapper(sendData(&stage)))
 	backstage.HandleFunc("/", giveInstructions)
 	go func() {
 		err := http.ListenAndServe(fmt.Sprintf(":%d", stage.Info.Port), backstage)
@@ -57,6 +47,27 @@ func Start(name string, info *Info, charts []*chart.Chart) {
 	if !stage.Info.DisableTerminalLogs {
 		log.Printf("backstage running on port %d\n", stage.Info.Port)
 	}
+
+	return
+}
+
+func setDefaults(info *Info) {
+	if info.Port == 0 {
+		info.Port = 9999
+	}
+
+	if info.RefreshRate < 1 {
+		info.RefreshRate = 1000
+	}
+
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", info.Port))
+	if err != nil {
+		l, err = net.Listen("tcp", ":0")
+		utils.PanicIf(err)
+
+		info.Port = l.Addr().(*net.TCPAddr).Port
+	}
+	l.Close()
 
 	return
 }

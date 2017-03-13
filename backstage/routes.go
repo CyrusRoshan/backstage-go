@@ -19,13 +19,23 @@ type chartInfo struct {
 }
 
 type infoContainer struct {
+	Name       string
 	GlobalInfo *Info
 	ChartInfo  []chartInfo
+}
+
+func headerModificationWrapper(next func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		next(w, r)
+	}
 }
 
 func sendInfo(s *stageFloor) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		sentInfo := infoContainer{
+			Name:       s.Name,
 			GlobalInfo: s.Info,
 			ChartInfo:  make([]chartInfo, len(s.Charts)),
 		}
@@ -42,10 +52,10 @@ func sendInfo(s *stageFloor) func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func ping(s *stageFloor) func(http.ResponseWriter, *http.Request) {
+func ping() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
-		w.Write([]byte(s.Name))
+		w.Write([]byte(""))
 	}
 }
 
