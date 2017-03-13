@@ -1,12 +1,35 @@
-package backstage
+package chart
 
 import "container/ring"
 
+type chartType string
+
+const (
+	DOUGHNUT      = chartType("doughnut")
+	PIE           = chartType("pie")
+	LINE          = chartType("line")
+	BAR           = chartType("bar")
+	HORIZONTALBAR = chartType("horizontalBar")
+	RADAR         = chartType("radar")
+	POLARAREA     = chartType("polarArea")
+	BUBBLE        = chartType("bubble")
+)
+
 type Chart struct {
 	Name       string
-	Info       string
+	Type       chartType `json:"-"`
+	Info       string    `json:"-"`
 	ReadData   []interface{}
 	DataBuffer *ring.Ring `json:"-"`
+}
+
+func NewChart(name string, chartType chartType, info string) *Chart {
+	return &Chart{
+		Name:       name,
+		Info:       info,
+		Type:       chartType,
+		DataBuffer: ring.New(30),
+	}
 }
 
 func (c *Chart) Push(data interface{}) {
@@ -14,7 +37,7 @@ func (c *Chart) Push(data interface{}) {
 	c.DataBuffer = c.DataBuffer.Next()
 }
 
-func (c *Chart) readAndClear() *[]interface{} {
+func (c *Chart) ReadAndClear() *[]interface{} {
 	length := c.DataBuffer.Len()
 	c.ReadData = make([]interface{}, length)
 

@@ -6,19 +6,26 @@ import (
 	"time"
 
 	"github.com/cyrusroshan/backstage-go/backstage"
+	"github.com/cyrusroshan/backstage-go/backstage/chart"
 )
 
 func main() {
-	info := backstage.Info{}
-	stage := backstage.Create(info)
-
-	randomInt := stage.NewChart("randomInt", "")
+	randomIntChart := chart.NewChart("Random Int Chart", chart.BAR, "")
+	backstage.Start(
+		"Sample Application",
+		&backstage.Info{
+			Port: 9999,
+		},
+		[]*chart.Chart{
+			randomIntChart,
+		},
+	)
 
 	for {
 		randInt := rand.Intn(100)
 
 		fmt.Println("Pushing", randInt)
-		randomInt.Push(randInt)
+		randomIntChart.Push(randInt)
 
 		time.Sleep(500 * time.Millisecond)
 	}

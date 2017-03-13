@@ -1,48 +1,62 @@
 package backstage
 
 import (
-	"container/ring"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
+
+	"github.com/cyrusroshan/backstage-go/backstage/chart"
+	"github.com/cyrusroshan/qli/utils"
 )
 
 type Info struct {
-	ClientLogs     bool   `json:"clientLogs"`
-	ServerLogs     bool   `json:"serverLogs"`
-	GlobalDefaults string `json:"globalDefaults"`
-	Port           int
+	GlobalDefaults      string `json:"globalDefaults"`
+	ClientLogs          bool   `json:"clientLogs"`
+	ServerLogs          bool   `json:"serverLogs"`
+	DisableTerminalLogs bool
+	Port                int `json:"-"`
 }
 
 type stageFloor struct {
+	Name   string
 	Info   *Info
-	Charts []*Chart
+	Charts []*chart.Chart
 }
 
-func Create(info Info) *stageFloor {
+func Start(name string, info *Info, charts []*chart.Chart) {
 	if info.Port == 0 {
-		info.Port = 8080
+		info.Port = 9999
 	}
+
+	l, err := net.Listen("tcp", fmt.Sprintf(":%d", info.Port))
+	if err != nil {
+		l, err := net.Listen("tcp", ":0")
+		utils.PanicIf(err)
+
+		info.Port = l.Addr().(*net.TCPAddr).Port
+	}
+	l.Close()
 
 	stage := stageFloor{
-		Info: &info,
+		Name:   name,
+		Info:   info,
+		Charts: charts,
 	}
 
-	http.HandleFunc("/info", sendInfo(&info))
-	http.HandleFunc("/", sendData(&stage))
-	go http.ListenAndServe(fmt.Sprintf(":%d", info.Port), nil)
-	log.Printf("backstage running on port %d\n", info.Port)
+	backstage := http.NewServeMux()
+	backstage.HandleFunc("/ping", ping(&stage))
+	backstage.HandleFunc("/info", sendInfo(&stage))
+	backstage.HandleFunc("/data", sendData(&stage))
+	backstage.HandleFunc("/", giveInstructions)
+	go func() {
+		err := http.ListenAndServe(fmt.Sprintf(":%d", stage.Info.Port), backstage)
+		utils.PanicIf(err)
+	}()
 
-	return &stage
-}
-
-func (s *stageFloor) NewChart(name string, info string) *Chart {
-	chart := Chart{
-		Name:       name,
-		Info:       info,
-		DataBuffer: ring.New(30),
+	if !stage.Info.DisableTerminalLogs {
+		log.Printf("backstage running on port %d\n", stage.Info.Port)
 	}
-	s.Charts = append(s.Charts, &chart)
 
-	return &chart
+	return
 }
