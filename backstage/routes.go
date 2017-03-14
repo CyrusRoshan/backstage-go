@@ -14,8 +14,8 @@ func giveInstructions(w http.ResponseWriter, r *http.Request) {
 }
 
 type chartInfo struct {
-	Name string
-	Info string
+	Name    string
+	Options string
 }
 
 type infoContainer struct {
@@ -42,8 +42,8 @@ func sendInfo(s *stageFloor) func(http.ResponseWriter, *http.Request) {
 
 		for i, chart := range s.Charts {
 			sentInfo.ChartInfo[i] = chartInfo{
-				Name: chart.Name,
-				Info: chart.Info,
+				Name:    chart.Name,
+				Options: chart.Options,
 			}
 		}
 

@@ -5,61 +5,58 @@ import "container/ring"
 type chartType string
 
 const (
-	DOUGHNUT      = chartType("doughnut")
-	PIE           = chartType("pie")
-	LINE          = chartType("line")
-	BAR           = chartType("bar")
-	HORIZONTALBAR = chartType("horizontalBar")
-	RADAR         = chartType("radar")
-	POLARAREA     = chartType("polarArea")
-	BUBBLE        = chartType("bubble")
+	DOUGHNUT      = chartType("Doughnut")
+	PIE           = chartType("Pie")
+	LINE          = chartType("Line")
+	BAR           = chartType("Bar")
+	HORIZONTALBAR = chartType("HorizontalBar")
+	RADAR         = chartType("Radar")
+	POLARAREA     = chartType("PolarArea")
+	BUBBLE        = chartType("Bubble")
 )
 
 type Chart struct {
-	Name       string
-	Type       chartType `json:"-"`
-	Info       string    `json:"-"`
-	ReadData   []interface{}
+	Name     string
+	Type     chartType
+	Labels   []string
+	Options  string `json:"-"`
+	Datasets []*Dataset
+}
+
+type Dataset struct {
+	Options    string
+	Data       []interface{}
 	DataBuffer *ring.Ring `json:"-"`
 }
 
-func NewChart(name string, chartType chartType, info string) *Chart {
-	return &Chart{
-		Name:       name,
-		Info:       info,
-		Type:       chartType,
-		DataBuffer: ring.New(30),
-	}
+func (c *Dataset) Push(data interface{}) {
+	d.DataBuffer.Value = data
+	d.DataBuffer = d.DataBuffer.Next()
 }
 
-func (c *Chart) Push(data interface{}) {
-	c.DataBuffer.Value = data
-	c.DataBuffer = c.DataBuffer.Next()
-}
-
-func (c *Chart) ReadAndClear() *[]interface{} {
-	length := c.DataBuffer.Len()
-	c.ReadData = make([]interface{}, length)
+func (d *Dataset) readAndClear() *[]interface{} {
+	length := d.DataBuffer.Len()
+	d.ReadData = make([]interface{}, length)
 
 	for i := 0; i < length; i++ {
-		if c.DataBuffer.Value == nil {
-			c.DataBuffer = c.DataBuffer.Next()
+		if d.DataBuffer.Value == nil {
+			d.DataBuffer = d.DataBuffer.Next()
 		}
 	}
 
 	i := 0
 	for i < length {
-		data := c.DataBuffer.Value
+		data := d.DataBuffer.Value
 		if data == nil {
 			break
 		}
 
-		c.ReadData[i] = data
-		c.DataBuffer.Value = nil
+		d.ReadData[i] = data
+		d.DataBuffer.Value = nil
 		i++
-		c.DataBuffer = c.DataBuffer.Next()
+		d.DataBuffer = d.DataBuffer.Next()
 	}
 
-	c.ReadData = c.ReadData[:i]
-	return &(c.ReadData)
+	d.ReadData = d.ReadData[:i]
+	return &(d.ReadData)
 }

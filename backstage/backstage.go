@@ -20,18 +20,18 @@ type Info struct {
 }
 
 type stageFloor struct {
-	Name   string
-	Info   *Info
-	Charts []*chart.Chart
+	Name        string
+	Info        *Info
+	ChartHolder *chart.ChartHolder
 }
 
-func Start(name string, info *Info, charts []*chart.Chart) {
+func Start(name string, info *Info, chartHolder *chart.ChartHolder) {
 	setDefaults(info)
 
 	stage := stageFloor{
-		Name:   name,
-		Info:   info,
-		Charts: charts,
+		Name:        name,
+		Info:        info,
+		ChartHolder: chartHolder,
 	}
 
 	backstage := http.NewServeMux()
